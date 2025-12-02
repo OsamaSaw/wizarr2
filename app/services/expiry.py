@@ -2,6 +2,8 @@ import datetime
 import logging
 import time
 
+from sqlalchemy import or_
+
 from app.extensions import db
 from app.models import ExpiredUser, Invitation, User, invitation_servers
 from app.services.media.service import delete_user, disable_user
@@ -15,6 +17,22 @@ def _has_existing_expired_log(user_id: int) -> bool:
         .limit(1)
         .scalar()
         is not None
+    )
+
+
+def _has_duplicate_expired_identity(user: User) -> bool:
+    """Avoid logging the same person repeatedly (username/email + server)."""
+    email = (user.email or "").strip()
+    username = (user.username or "").strip()
+
+    filters = [ExpiredUser.server_id == user.server_id]
+    if email:
+        filters.append(or_(ExpiredUser.email == email, ExpiredUser.username == username))
+    else:
+        filters.append(ExpiredUser.username == username)
+
+    return (
+        db.session.query(ExpiredUser.id).filter(*filters).limit(1).scalar() is not None
     )
 
 
@@ -115,7 +133,7 @@ def delete_user_if_expired() -> list[int]:
 
     deleted: list[int] = []
     for user in expired_rows:
-        if _has_existing_expired_log(user.id):
+        if _has_existing_expired_log(user.id) or _has_duplicate_expired_identity(user):
             logging.debug(
                 "Skipping expired user %s (%s) – already logged", user.id, user.username
             )
@@ -202,7 +220,7 @@ def disable_or_delete_user_if_expired() -> list[int]:
 
     processed: list[int] = []
     for user in expired_rows:
-        if _has_existing_expired_log(user.id):
+        if _has_existing_expired_log(user.id) or _has_duplicate_expired_identity(user):
             logging.debug(
                 "Skipping expired user %s (%s) – already logged", user.id, user.username
             )

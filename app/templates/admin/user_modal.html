@@ -206,6 +206,84 @@
               </p>
             {% endif %}
           </div>
+          <!-- Billing / Subscription Section -->
+          <div class="mb-6">
+            <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">{{ _("Billing") }}</h3>
+            <form hx-post="{{ url_for('admin.user_detail', db_id=related_user.id) }}"
+                  class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 space-y-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label for="started_{{ related_user.id }}"
+                         class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {{ _("Started") }}
+                  </label>
+                  <input id="started_{{ related_user.id }}"
+                         name="started"
+                         type="datetime-local"
+                         value="{{ related_user.started|default('', true) and related_user.started.strftime('%Y-%m-%dT%H:%M') or '' }}"
+                         class="bg-white border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary focus:border-primary block w-full p-2.5 dark:bg-gray-800 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" />
+                </div>
+                <div>
+                  <label for="lastPaymentDate_{{ related_user.id }}"
+                         class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {{ _("Last Payment Date") }}
+                  </label>
+                  <input id="lastPaymentDate_{{ related_user.id }}"
+                         name="lastPaymentDate"
+                         type="datetime-local"
+                         value="{{ related_user.lastPaymentDate|default('', true) and related_user.lastPaymentDate.strftime('%Y-%m-%dT%H:%M') or '' }}"
+                         class="bg-white border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary focus:border-primary block w-full p-2.5 dark:bg-gray-800 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" />
+                </div>
+                <div>
+                  <label for="lastPaymentAmount_{{ related_user.id }}"
+                         class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {{ _("Last Payment Amount") }}
+                  </label>
+                  <input id="lastPaymentAmount_{{ related_user.id }}"
+                         name="lastPaymentAmount"
+                         type="number"
+                         step="1"
+                         min="0"
+                         value="{{ related_user.lastPaymentAmount if related_user.lastPaymentAmount is not none else '' }}"
+                         class="bg-white border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary focus:border-primary block w-full p-2.5 dark:bg-gray-800 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" />
+                </div>
+                <div class="flex items-center gap-4 pt-6">
+                  <div class="flex items-center">
+                    <input type="hidden" name="recurringPayment" value="false">
+                    <input id="recurringPayment_{{ related_user.id }}"
+                           name="recurringPayment"
+                           type="checkbox"
+                           value="true"
+                           {% if related_user.recurringPayment %}checked{% endif %}
+                           class="w-4 h-4 text-primary bg-gray-100 border-gray-300 rounded focus:ring-primary dark:focus:ring-primary dark:ring-offset-gray-900 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                    <label for="recurringPayment_{{ related_user.id }}"
+                           class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+                      {{ _("Recurring Payment") }}
+                    </label>
+                  </div>
+                  <div class="flex items-center">
+                    <input type="hidden" name="isTrial" value="false">
+                    <input id="isTrial_{{ related_user.id }}"
+                           name="isTrial"
+                           type="checkbox"
+                           value="true"
+                           {% if related_user.isTrial %}checked{% endif %}
+                           class="w-4 h-4 text-primary bg-gray-100 border-gray-300 rounded focus:ring-primary dark:focus:ring-primary dark:ring-offset-gray-900 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                    <label for="isTrial_{{ related_user.id }}"
+                           class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+                      {{ _("Trial User") }}
+                    </label>
+                  </div>
+                </div>
+              </div>
+              <div class="flex justify-end">
+                <button type="submit"
+                        class="inline-flex items-center px-4 py-2.5 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary_hover focus:ring-4 focus:outline-none focus:ring-primary_focus dark:bg-primary dark:hover:bg-primary_hover dark:focus:ring-primary_focus">
+                  {{ _("Update Billing") }}
+                </button>
+              </div>
+            </form>
+          </div>
           <!-- Expiry Management Section -->
           <div>
             <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">{{ _("Expiry Management") }}</h3>

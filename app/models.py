@@ -184,6 +184,19 @@ class User(db.Model, UserMixin):
     code = db.Column(db.String, nullable=False)
     photo = db.Column(db.String, nullable=True)
     expires = db.Column(db.DateTime, nullable=True)
+    started = db.Column(
+        db.DateTime, nullable=False, default=lambda: datetime.now(UTC)
+    )
+    lastPaymentDate = db.Column(db.DateTime, nullable=True)
+    lastPaymentAmount = db.Column(db.Integer, nullable=True)
+    recurringPayment = db.Column(
+        db.Boolean, nullable=False, default=False
+    )
+    isTrial = db.Column(
+        db.Boolean, nullable=False, default=False
+    )
+
+
     server_id = db.Column(
         db.Integer, db.ForeignKey("media_server.id", ondelete="CASCADE"), nullable=True
     )

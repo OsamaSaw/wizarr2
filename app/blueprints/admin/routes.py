@@ -19,6 +19,7 @@ from flask_login import login_required
 
 from app.extensions import db, limiter
 from app.models import (
+    ExpiredUser,
     Identity,
     Invitation,
     Library,
@@ -510,6 +511,53 @@ def user_detail(db_id: int):
         if "notes" in request.form:
             user.notes = request.form.get("notes", "")
 
+        # Update started date if provided (leave unchanged when empty)
+        if "started" in request.form:
+            raw_started = request.form.get("started")
+            if raw_started:
+                started_dt = datetime.datetime.fromisoformat(raw_started)
+                user.started = (
+                    started_dt
+                    if started_dt.tzinfo
+                    else started_dt.replace(tzinfo=datetime.UTC)
+                )
+
+        # Update last payment date
+        if "lastPaymentDate" in request.form:
+            raw_last_payment = request.form.get("lastPaymentDate")
+            if raw_last_payment:
+                last_payment_dt = datetime.datetime.fromisoformat(raw_last_payment)
+                user.lastPaymentDate = (
+                    last_payment_dt
+                    if last_payment_dt.tzinfo
+                    else last_payment_dt.replace(tzinfo=datetime.UTC)
+                )
+            else:
+                user.lastPaymentDate = None
+
+        # Update last payment amount (integer)
+        if "lastPaymentAmount" in request.form:
+            raw_amount = request.form.get("lastPaymentAmount", "").strip()
+            if raw_amount == "":
+                user.lastPaymentAmount = None
+            else:
+                try:
+                    user.lastPaymentAmount = int(raw_amount)
+                except ValueError:
+                    # Ignore invalid input; keep existing value
+                    pass
+
+        # Update billing toggles
+        if "recurringPayment" in request.form:
+            recurring_values = request.form.getlist("recurringPayment")
+            recurring_raw = recurring_values[-1] if recurring_values else ""
+            user.recurringPayment = recurring_raw in ["true", "on", "1", True]
+
+        if "isTrial" in request.form:
+            trial_values = request.form.getlist("isTrial")
+            trial_raw = trial_values[-1] if trial_values else ""
+            user.isTrial = trial_raw in ["true", "on", "1", True]
+
         # NOTE: We intentionally do NOT update server-specific expiry here.
         # Server-specific expiry in invitation_servers is meant for multi-server invitations
         # where the same user has different expiry dates on different servers.
@@ -944,6 +992,45 @@ def process_user_deletion():
     return response
 
 
+@admin_bp.post("/users/expired/cleanup")
+@login_required
+def cleanup_expired_users():
+    """Remove duplicate expired user records, keeping the most recent per user/server."""
+    expired = (
+        ExpiredUser.query.options(db.joinedload(ExpiredUser.server))
+        .order_by(ExpiredUser.deleted_at.desc())
+        .all()
+    )
+
+    seen: dict[tuple, ExpiredUser] = {}
+    to_delete: list[ExpiredUser] = []
+
+    for row in expired:
+        email = (row.email or "").strip().lower()
+        username = (row.username or "").strip().lower()
+        key = (row.server_id, email, username)
+        if key in seen:
+            to_delete.append(row)
+        else:
+            seen[key] = row
+
+    if to_delete:
+        for row in to_delete:
+            db.session.delete(row)
+        db.session.commit()
+
+    refreshed = (
+        ExpiredUser.query.options(db.joinedload(ExpiredUser.server))
+        .order_by(ExpiredUser.deleted_at.desc())
+        .all()
+    )
+
+    response = render_template(
+        "_partials/expired_users_card.html", expired_users=refreshed
+    )
+    return response
+
+
 # Helper: group and enrich users for display
 def _group_users_for_display(user_list):
     """Collapse multiple User rows into primary cards.
@@ -977,6 +1064,18 @@ def _group_users_for_display(user_list):
         code = next(
             (a.code for a in lst if a.code and a.code not in ("None", "empty")), ""
         )
+        # Billing metadata – prefer earliest started, latest payment, and aggregate flags
+        started_dates = [a.started for a in lst if getattr(a, "started", None)]
+        last_payment_dates = [
+            a.lastPaymentDate for a in lst if getattr(a, "lastPaymentDate", None)
+        ]
+        last_payment_amounts = [
+            a.lastPaymentAmount
+            for a in lst
+            if getattr(a, "lastPaymentAmount", None) is not None
+        ]
+        recurring = any(getattr(a, "recurringPayment", False) for a in lst)
+        is_trial = any(getattr(a, "isTrial", False) for a in lst)
         allow_sync = any(getattr(a, "allowSync", False) for a in lst)
 
         # Note: allow_downloads and allow_live_tv are now properties that read from metadata
@@ -997,6 +1096,14 @@ def _group_users_for_display(user_list):
         primary.code = code
         primary.allowSync = allow_sync
         primary.invited_date = invited_date
+        primary.started = min(started_dates) if started_dates else primary.started
+        primary.lastPaymentDate = (
+            max(last_payment_dates) if last_payment_dates else primary.lastPaymentDate
+        )
+        if last_payment_amounts:
+            primary.lastPaymentAmount = last_payment_amounts[-1]
+        primary.recurringPayment = recurring
+        primary.isTrial = is_trial
         # Note: allow_downloads and allow_live_tv are properties - no need to set them
         cards.append(primary)
     return cards

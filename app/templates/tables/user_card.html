@@ -116,6 +116,53 @@
                   <span>{{ _("Invite Code") }}: {{ user.code }}</span>
                 </div>
               {% endif %}
+              <!-- Started date -->
+              {% if user.started %}
+                <div class="flex items-center text-sm text-muted-foreground dark:text-gray-400">
+                  <svg class="h-4 w-4 mr-2"
+                       fill="none"
+                       viewBox="0 0 24 24"
+                       stroke="currentColor"
+                       stroke-width="2"
+                       xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2Z" />
+                  </svg>
+                  <span>{{ _("Started") }}: {{ user.started|human_date }}</span>
+                </div>
+              {% endif %}
+              <!-- Last payment -->
+              {% if user.lastPaymentDate or user.lastPaymentAmount is not none %}
+                <div class="flex items-center text-sm text-muted-foreground dark:text-gray-400">
+                  <svg class="h-4 w-4 mr-2"
+                       fill="none"
+                       viewBox="0 0 24 24"
+                       stroke="currentColor"
+                       stroke-width="2"
+                       xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4m16 0-3.5 3.5M20 12 16.5 8.5M4 12l3.5 3.5M4 12l3.5-3.5M9 21h6m-7-1a2 2 0 0 1-2-2m0 0V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2m-8 0a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2" />
+                  </svg>
+                  <span>
+                    {{ _("Last Payment") }}:
+                    {% if user.lastPaymentDate %}
+                      {{ user.lastPaymentDate|human_date }}
+                    {% else %}
+                      {{ _("Date not set") }}
+                    {% endif %}
+                    {% if user.lastPaymentAmount is not none %}
+                      — {{ user.lastPaymentAmount }}
+                    {% endif %}
+                  </span>
+                </div>
+              {% endif %}
+              <!-- Billing toggles -->
+              <div class="flex items-center text-sm text-muted-foreground dark:text-gray-400 space-x-2">
+                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {% if user.recurringPayment %}bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300{% else %}bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300{% endif %}">
+                  {{ _("Recurring") }}: {{ _("Yes") if user.recurringPayment else _("No") }}
+                </span>
+                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {% if user.isTrial %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200{% else %}bg-gray-100 text-gray-700 dark:bg-gray-900 dark:text-gray-300{% endif %}">
+                  {{ _("Trial") }}: {{ _("Yes") if user.isTrial else _("No") }}
+                </span>
+              </div>
               <!-- Notes -->
               {% if user.notes and user.notes.strip() %}
                 <div class="flex items-start text-sm text-muted-foreground dark:text-gray-400">

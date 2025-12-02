@@ -65,6 +65,40 @@
           <p class="mb-3 text-gray-500 dark:text-gray-400">
             <span class="font-medium">{{ _("Username") }}:</span> {{ info.username }}
           </p>
+          <!-- Billing summary -->
+          <div class="mb-3 space-y-1 text-gray-500 dark:text-gray-400">
+            <div class="flex items-center">
+              <span class="font-medium">{{ _("Started") }}:</span>
+              <span class="ml-1">
+                {% if info.started %}
+                  {{ info.started|human_date }}
+                {% else %}
+                  {{ _("Unknown") }}
+                {% endif %}
+              </span>
+            </div>
+            <div class="flex items-center">
+              <span class="font-medium">{{ _("Last Payment") }}:</span>
+              <span class="ml-1">
+                {% if info.last_payment_date %}
+                  {{ info.last_payment_date|human_date }}
+                {% else %}
+                  {{ _("Date not set") }}
+                {% endif %}
+                {% if info.last_payment_amount is not none %}
+                  — {{ info.last_payment_amount }}
+                {% endif %}
+              </span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if info.recurring_payment %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300{% else %}bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300{% endif %}">
+                {{ _("Recurring") }}: {{ _("Yes") if info.recurring_payment else _("No") }}
+              </span>
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if info.is_trial %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200{% else %}bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300{% endif %}">
+                {{ _("Trial") }}: {{ _("Yes") if info.is_trial else _("No") }}
+              </span>
+            </div>
+          </div>
           <!-- Libraries -->
           <div class="mb-4">
             <p class="font-medium mb-2">{{ _("Libraries") }}:</p>

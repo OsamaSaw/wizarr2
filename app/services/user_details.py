@@ -23,6 +23,11 @@ class AccountInfo:
     allow_downloads: bool
     allow_live_tv: bool
     allow_camera_upload: bool
+    started: datetime | None
+    last_payment_date: datetime | None
+    last_payment_amount: int | None
+    recurring_payment: bool
+    is_trial: bool
 
 
 @dataclass(frozen=True)
@@ -107,6 +112,11 @@ class UserDetailsService:
                 allow_downloads=False,
                 allow_live_tv=False,
                 allow_camera_upload=False,
+                started=account.started,
+                last_payment_date=account.lastPaymentDate,
+                last_payment_amount=account.lastPaymentAmount,
+                recurring_payment=account.recurringPayment or False,
+                is_trial=account.isTrial or False,
             )
 
         # Use standardized metadata if available
@@ -121,6 +131,11 @@ class UserDetailsService:
                 allow_downloads=account.allow_downloads or False,
                 allow_live_tv=account.allow_live_tv or False,
                 allow_camera_upload=account.allow_camera_upload or False,
+                started=account.started,
+                last_payment_date=account.lastPaymentDate,
+                last_payment_amount=account.lastPaymentAmount,
+                recurring_payment=account.recurringPayment or False,
+                is_trial=account.isTrial or False,
             )
 
         # No standardized metadata available, fetch from API
@@ -144,6 +159,11 @@ class UserDetailsService:
             allow_downloads=details.allow_downloads,
             allow_live_tv=details.allow_live_tv,
             allow_camera_upload=details.allow_camera_upload,
+            started=account.started,
+            last_payment_date=account.lastPaymentDate,
+            last_payment_amount=account.lastPaymentAmount,
+            recurring_payment=account.recurringPayment or False,
+            is_trial=account.isTrial or False,
         )
 
     def _extract_libraries_from_cached_data(

@@ -126,7 +126,18 @@ Plus features include:
     )
 
     try:
-        flask_command = ["uv", "run", "flask", "run", "--debug"]
+        # Bind dev server explicitly so we don't rely on defaults (5000)
+        flask_command = [
+            "uv",
+            "run",
+            "flask",
+            "run",
+            "--debug",
+            "--host",
+            "0.0.0.0",
+            "--port",
+            "4690",
+        ]
 
         # Set environment variables based on flags
         if args.scheduler:
