@@ -7,6 +7,17 @@ from app.models import ExpiredUser, Invitation, User, invitation_servers
 from app.services.media.service import delete_user, disable_user
 
 
+def _has_existing_expired_log(user_id: int) -> bool:
+    """Return True if we've already logged this user in expired_user."""
+    return (
+        db.session.query(ExpiredUser.id)
+        .filter(ExpiredUser.original_user_id == user_id)
+        .limit(1)
+        .scalar()
+        is not None
+    )
+
+
 def calculate_user_expiry(
     invitation: Invitation, server_id: int | None = None
 ) -> datetime.datetime | None:
@@ -104,6 +115,11 @@ def delete_user_if_expired() -> list[int]:
 
     deleted: list[int] = []
     for user in expired_rows:
+        if _has_existing_expired_log(user.id):
+            logging.debug(
+                "Skipping expired user %s (%s) – already logged", user.id, user.username
+            )
+            continue
         # Use a nested transaction (savepoint) so if deletion fails,
         # we can rollback the ExpiredUser creation too
         savepoint = db.session.begin_nested()
@@ -186,6 +202,11 @@ def disable_or_delete_user_if_expired() -> list[int]:
 
     processed: list[int] = []
     for user in expired_rows:
+        if _has_existing_expired_log(user.id):
+            logging.debug(
+                "Skipping expired user %s (%s) – already logged", user.id, user.username
+            )
+            continue
         # Use a nested transaction (savepoint) so if deletion/disabling fails,
         # we can rollback the ExpiredUser creation too
         savepoint = db.session.begin_nested()
