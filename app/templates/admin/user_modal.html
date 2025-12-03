@@ -276,6 +276,17 @@
                   </div>
                 </div>
               </div>
+              <div>
+                <label for="notes_inline_{{ related_user.id }}"
+                       class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {{ _("Notes") }}
+                </label>
+                <textarea id="notes_inline_{{ related_user.id }}"
+                          name="notes"
+                          rows="4"
+                          placeholder="{{ _('Add notes about this user...') }}"
+                          class="bg-white border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary focus:border-primary block w-full p-3 dark:bg-gray-800 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">{{ user.notes|default('', true) }}</textarea>
+              </div>
               <div class="flex justify-end">
                 <button type="submit"
                         class="inline-flex items-center px-4 py-2.5 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary_hover focus:ring-4 focus:outline-none focus:ring-primary_focus dark:bg-primary dark:hover:bg-primary_hover dark:focus:ring-primary_focus">
